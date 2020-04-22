@@ -12,80 +12,60 @@ import okhttp3.Response;
 import java.io.IOException;
 
 public class UserApi {
-    private static OkHttpClient client = new OkHttpClient().newBuilder().build();
-    private static MediaType mediaType = MediaType.parse("application/json");
-    private static Gson gson = new Gson();
-    private static String url = Main.URL;
+    private static UserApi instance;
+    private MediaType mediaType = MediaType.parse("application/json");
+    private Gson gson = new Gson();
+    private String url = Main.URL;
 
-    public static void deleteAllUsers(String path) throws IOException {
-        Request request = new Request.Builder()
-                .url(url + path)
-                .delete()
-                .addHeader("Accept", "application/json")
-                .build();
-        Response response = client.newCall(request).execute();
-        System.out.println(response.code());
-        System.out.println(response.body().string());
+    public static synchronized UserApi getInstance() {
+        if (instance == null) {
+            instance = new UserApi();
+        }
+        return instance;
     }
 
-    public static void deleteUser(User user) throws IOException {
+    private UserApi() {
+    }
+
+    private Response getResponse(String method, RequestBody body, String url) {
+        try {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(url)
+                    .method(method, body)
+                    .addHeader("Accept", "application/json")
+                    .build();
+            return client.newCall(request).execute();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public Response createUser(User user) {
         RequestBody body = RequestBody.create(gson.toJson(user), mediaType);
-        Request request = new Request.Builder()
-                .url(url)
-                .delete(body)
-                .addHeader("Accept", "application/json")
-                .addHeader("Content-Type", "application/json")
-                .build();
-        Response response = client.newCall(request).execute();
-        System.out.println(response.code());
-        System.out.println(response.body().string());
+        return getResponse("POST", body, url);
     }
 
-    public static void getUser(String id) throws IOException {
-        Request request = new Request.Builder()
-                .url(url + "/" + id)
-                .get()
-                .addHeader("Accept", "application/json")
-                .build();
-        Response response = client.newCall(request).execute();
-        System.out.println(response.code());
-        System.out.println(response.body().string());
+    public Response getUser(String path) {
+        return getResponse("GET", null, url + path);
     }
 
-    public static void updateUser(User user) throws IOException {
+    public Response getListUsers() {
+        return getResponse("GET", null, url);
+    }
+
+    public Response updateUser(User user) {
         RequestBody body = RequestBody.create(gson.toJson(user), mediaType);
-        Request request = new Request.Builder()
-                .url(url)
-                .put(body)
-                .addHeader("Accept", "application/json")
-                .addHeader("Content-Type", "application/json")
-                .build();
-        Response response = client.newCall(request).execute();
-        System.out.println(response.code());
-        System.out.println(response.body().string());
+        return getResponse("PUT", body, url);
     }
 
-    public static void getListUsers() throws IOException {
-        Request request = new Request.Builder()
-                .url(url)
-                .get()
-                .addHeader("Accept", "application/json")
-                .build();
-        Response response = client.newCall(request).execute();
-        System.out.println(response.code());
-        System.out.println(response.body().string());
-    }
-
-    public static void createUser(User user) throws IOException {
+    public Response deleteUser(User user) {
         RequestBody body = RequestBody.create(gson.toJson(user), mediaType);
-        Request request = new Request.Builder()
-                .url(url)
-                .post(body)
-                .addHeader("Accept", "application/json")
-                .addHeader("Content-Type", "application/json")
-                .build();
-        Response response = client.newCall(request).execute();
-        System.out.println(response.code());
-        System.out.println(response.body().string());
+        return getResponse("DELETE", body, url);
+    }
+
+    public Response deleteAllUsers(String path) {
+        return getResponse("DELETE", null, url + path);
     }
 }
